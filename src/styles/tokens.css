@@ -1,0 +1,112 @@
+/* ============================================================
+   TAPP DESIGN TOKENS — single source of truth (Part 1)
+   Every component reads from these. Retheme here, nowhere else.
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #05070C;
+  --color-bg-glass: rgba(255, 255, 255, 0.12);
+  --color-bg-glass-premium: rgba(255, 255, 255, 0.16);
+
+  /* Accents */
+  --color-cyan: #00FFFF;
+  --color-cyan-secondary: #00E5FF;
+  --color-gold: #FFD700;
+  --color-gold-secondary: #F5C542;
+  --color-red: #EF4444;
+  --color-red-secondary: #FF3333;
+
+  /* Text */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #9CA3AF;
+  --color-text-tertiary: #6B7280;
+
+  /* Text-safe accent variants — used for SMALL directional text only.
+     On black the bright accents already pass, so these equal them in dark mode.
+     Light mode overrides them to darker values that clear 4.5:1 (see below). */
+  --color-cyan-ink: #00FFFF;
+  --color-red-ink: #EF4444;
+
+  /* Glows */
+  --glow-cyan: 0 0 6px rgba(0, 255, 255, 0.6);
+  --glow-gold: 0 0 6px rgba(255, 215, 0, 0.6);
+  --glow-red: 0 0 6px rgba(239, 68, 68, 0.6);
+
+  /* Shadows */
+  --shadow-glass-standard: 0 8px 10px rgba(0, 229, 255, 0.15);
+  --shadow-glass-premium: 0 14px 16px rgba(0, 229, 255, 0.25);
+  --shadow-underglow-gold: 0 8px 12px rgba(255, 215, 0, 0.2);
+
+  /* Hairlines (tokenised so light mode can flip them) */
+  --hairline: rgba(255, 255, 255, 0.10);
+  --hairline-soft: rgba(255, 255, 255, 0.08);
+
+  /* Primary-button ink — see README "Reconciliations" */
+  --btn-primary-ink: #001014;
+
+  /* Type */
+  --font-display: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --font-size-hero-mobile: 48px;  --font-size-price-mobile: 44px;  --font-size-change-mobile: 22px;
+  --font-size-label-mobile: 16px; --font-size-body-mobile: 14px;   --font-size-small-mobile: 12px;
+  --font-size-hero-tablet: 38px;  --font-size-price-tablet: 36px;  --font-size-change-tablet: 20px;
+  --font-size-label-tablet: 15px; --font-size-body-tablet: 13px;
+  --font-size-hero-desktop: 36px; --font-size-price-desktop: 32px; --font-size-change-desktop: 18px;
+  --font-size-label-desktop: 14px;--font-size-body-desktop: 13px;
+
+  --font-weight-regular: 400; --font-weight-medium: 500; --font-weight-semibold: 600; --font-weight-bold: 700;
+  --line-height-tight: 1.2; --line-height-normal: 1.5; --line-height-relaxed: 1.6;
+
+  /* Spacing (4px base) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --spacing-card-padding: 24px; --spacing-card-gap-secondary: 20px; --spacing-card-gap-major: 32px;
+  --spacing-section: 32px;
+  --spacing-screen-margin-mobile: 16px; --spacing-screen-margin-tablet: 24px; --spacing-screen-margin-desktop: 32px;
+
+  /* Touch targets */
+  --touch-target-mobile: 60px; --touch-target-tablet: 52px; --touch-target-desktop: 44px;
+
+  /* Radius */
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-full: 9999px;
+  --radius-card: 18px; --radius-button: 12px; --radius-input: 10px;
+
+  /* Transitions */
+  --transition-quick: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-standard: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-elastic: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Z-index */
+  --z-base: 0; --z-dropdown: 100; --z-sticky: 200;
+  --z-modal-backdrop: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+}
+
+/* ---- Light mode overrides (applied via [data-theme="light"]) ----
+   First pass. Known caveat: --color-cyan #0EA5E9 on a light surface is ~3:1 —
+   fine for large/UI text, under 4.5:1 for small body text. See README. */
+[data-theme="light"] {
+  --color-bg-primary: #F8F9FA;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-glass: rgba(0, 0, 0, 0.06);
+  --color-bg-glass-premium: rgba(0, 0, 0, 0.04);
+  --color-cyan: #0EA5E9;
+  --color-gold: #F59E0B;
+  --color-red: #EF4444;
+  /* Bright cyan (#0EA5E9) / red (#EF4444) are ~3:1 on a light surface — fine for
+     fills, borders, large prices, and sparkline strokes (non-text 3:1), but they
+     fail small text. These ink variants clear 4.5:1 on white for small text. */
+  --color-cyan-ink: #0E7490;  /* ~5:1 on #FFF  */
+  --color-red-ink: #B91C1C;   /* ~6:1 on #FFF  */
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #9CA3AF;
+  --hairline: rgba(0, 0, 0, 0.10);
+  --hairline-soft: rgba(0, 0, 0, 0.07);
+  --shadow-glass-standard: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-glass-premium: 0 8px 12px rgba(0, 0, 0, 0.12);
+  --btn-primary-ink: #FFFFFF;
+}
