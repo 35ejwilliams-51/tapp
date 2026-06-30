@@ -8,7 +8,9 @@ import React, { useState, useEffect, useRef, useContext, createContext } from "r
     Free tier: 60 req/min, up to 50 symbols, 1 socket per key.
   • Without a key — or off market hours, or if a sandbox blocks the socket — a
     random-walk simulator keeps the UI moving so real-time behaviour is visible.
-  • The key lives only in React state. It is never logged or persisted.
+  • A key entered in the LiveBar lives only in React state. NOTE: a key supplied via
+    VITE_FINNHUB_KEY is inlined into the client bundle and is publicly visible — move it
+    behind a server proxy before production (see docs/SECURITY-REVIEW.md).
 
   To make day-change accurate in production, seed each symbol's `open` from the
   previous close via Finnhub's /quote REST endpoint instead of the static seed.
@@ -198,7 +200,7 @@ export function LiveBar() {
     connecting: { c: "var(--color-gold)", t: "Connecting…" },
     live: { c: "var(--color-cyan)", t: "Live · Finnhub" },
     error: { c: "var(--color-red)", t: "Connection failed — simulating" },
-  }[status];
+  }[status] || { c: "var(--color-gold)", t: "Simulated feed" };
   const connected = status === "live" || status === "connecting";
   return (
     <div className="live-bar">

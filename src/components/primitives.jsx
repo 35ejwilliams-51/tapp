@@ -10,7 +10,7 @@ export function Sparkline({ data, direction = "up", height = 48 }) {
   const gid = React.useId();
   return (
     <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" width="100%" height={height}
-         role="img" aria-label={`Trend ${direction === "down" ? "down" : "up"}`}>
+         role="img" aria-label="Price trend">
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.28" />

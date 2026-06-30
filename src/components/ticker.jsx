@@ -193,9 +193,9 @@ function OrderTicket() {
               <button className="sheet-x" aria-label="Close" onClick={close}><X size={20} /></button>
             </div>
 
-            <div className="seg" role="tablist" aria-label="Side">
-              <button role="tab" aria-selected={side === "buy"} className={side === "buy" ? "active" : ""} onClick={() => setSide("buy")}>Buy</button>
-              <button role="tab" aria-selected={side === "sell"} className={side === "sell" ? "active" : ""} onClick={() => setSide("sell")}>Sell</button>
+            <div className="seg" role="radiogroup" aria-label="Side">
+              <button role="radio" aria-checked={side === "buy"} className={side === "buy" ? "active" : ""} onClick={() => setSide("buy")}>Buy</button>
+              <button role="radio" aria-checked={side === "sell"} className={side === "sell" ? "active" : ""} onClick={() => setSide("sell")}>Sell</button>
             </div>
 
             <div className="field">
@@ -203,9 +203,9 @@ function OrderTicket() {
               <input id="ot-qty" className="input-text" type="number" min="0" value={qty} onChange={(e) => setQty(e.target.value)} />
             </div>
 
-            <div className="seg" role="tablist" aria-label="Order type">
-              <button role="tab" aria-selected={type === "market"} className={type === "market" ? "active" : ""} onClick={() => setType("market")}>Market</button>
-              <button role="tab" aria-selected={type === "limit"} className={type === "limit" ? "active" : ""} onClick={() => setType("limit")}>Limit</button>
+            <div className="seg" role="radiogroup" aria-label="Order type">
+              <button role="radio" aria-checked={type === "market"} className={type === "market" ? "active" : ""} onClick={() => setType("market")}>Market</button>
+              <button role="radio" aria-checked={type === "limit"} className={type === "limit" ? "active" : ""} onClick={() => setType("limit")}>Limit</button>
             </div>
 
             {type === "limit" && (

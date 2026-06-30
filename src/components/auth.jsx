@@ -11,6 +11,7 @@ export function AuthScreen({ onAuth }) {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
 
+  const isProd = (() => { try { return !!import.meta.env?.PROD; } catch { return false; } })();
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
   const ready = emailOk && pw.length >= 6 && (mode === "signin" || name.trim().length > 1);
   const submit = () => { if (ready) onAuth({ name: name.trim() || "Alex Morgan", email }); };
@@ -21,9 +22,9 @@ export function AuthScreen({ onAuth }) {
         <div className="auth-logo">TAPP</div>
         <div className="auth-tag">Institutional-grade signals, beautifully simple.</div>
 
-        <div className="seg" role="tablist" aria-label="Authentication mode">
-          <button role="tab" aria-selected={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>Sign in</button>
-          <button role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Create account</button>
+        <div className="seg" role="radiogroup" aria-label="Authentication mode">
+          <button role="radio" aria-checked={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>Sign in</button>
+          <button role="radio" aria-checked={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Create account</button>
         </div>
 
         <div className="glass-card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -50,11 +51,13 @@ export function AuthScreen({ onAuth }) {
           )}
         </div>
 
-        <div className="auth-foot">
-          <button className="link-inline" onClick={() => onAuth({ name: "Alex Morgan", email: "alex.morgan@example.com" })}>
-            Skip for demo →
-          </button>
-        </div>
+        {!isProd && (
+          <div className="auth-foot">
+            <button className="link-inline" onClick={() => onAuth({ name: "Alex Morgan", email: "alex.morgan@example.com" })}>
+              Skip for demo →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

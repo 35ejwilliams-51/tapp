@@ -200,8 +200,9 @@ export function TradeScreen() {
   const [stage, setStage] = useState("form"); // form | review | placed
 
   const q = Math.max(0, Number(qty) || 0);
-  const px = type === "Market" ? price : Number(limit) || price;
+  const px = Math.max(0, type === "Market" ? price : Number(limit) || price);
   const est = q * px;
+  const valid = q > 0 && px > 0 && Number(stop) > 0 && Number(tp) > 0 && (type === "Market" || Number(limit) > 0);
   const money = (n) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   if (stage === "placed") {
@@ -228,16 +229,16 @@ export function TradeScreen() {
           <div className="tt-px">
             ${price.toFixed(2)}
             <span className="tt-chg" style={{ color: up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
-              {up ? "+" : ""}{pct.toFixed(2)}%
+              <span aria-hidden="true">{up ? "▲" : "▼"}</span> {up ? "+" : ""}{pct.toFixed(2)}%
             </span>
           </div>
         </div>
         <div className="tt-spark"><Sparkline data={[20, 22, 21, 24, 23, 26, 25, 28, 27, 30]} direction={up ? "up" : "down"} height={40} /></div>
       </div>
 
-      <div className="seg seg-lg" role="tablist" aria-label="Side">
-        <button role="tab" aria-selected={side === "buy"} className={`buy ${side === "buy" ? "active" : ""}`} onClick={() => setSide("buy")}>Buy</button>
-        <button role="tab" aria-selected={side === "sell"} className={`sell ${side === "sell" ? "active" : ""}`} onClick={() => setSide("sell")}>Sell</button>
+      <div className="seg seg-lg" role="radiogroup" aria-label="Side">
+        <button role="radio" aria-checked={side === "buy"} className={`buy ${side === "buy" ? "active" : ""}`} onClick={() => setSide("buy")}>Buy</button>
+        <button role="radio" aria-checked={side === "sell"} className={`sell ${side === "sell" ? "active" : ""}`} onClick={() => setSide("sell")}>Sell</button>
       </div>
 
       <div className="trade-form">
@@ -256,8 +257,8 @@ export function TradeScreen() {
         </div>
         {type !== "Market" && (
           <div className="tf-field">
-            <span className="tf-k">Limit Price</span>
-            <input className="tf-input lg" type="number" min="0" value={limit} onChange={(e) => setLimit(e.target.value)} aria-label="Limit price" />
+            <span className="tf-k">{type === "Stop" ? "Stop Price" : "Limit Price"}</span>
+            <input className="tf-input lg" type="number" min="0" step="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} aria-label={type === "Stop" ? "Stop price" : "Limit price"} />
           </div>
         )}
         <div className="tf-pair">
@@ -286,12 +287,21 @@ export function TradeScreen() {
         <span className="cp-v">${money(est)}</span>
       </div>
 
+      {!valid && (
+        <div className="set-sub" style={{ textAlign: "center", color: "var(--color-red-ink)" }}>
+          Enter a valid quantity and price to continue.
+        </div>
+      )}
       {stage === "form" ? (
-        <button className="btn-review" onClick={() => setStage("review")}>Review Order</button>
+        <button className="btn-review" disabled={!valid}
+                style={!valid ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+                onClick={() => valid && setStage("review")}>Review Order</button>
       ) : (
         <>
           <button className="btn-review" onClick={() => setStage("form")}>Edit Order</button>
-          <button className="btn-confirm" onClick={() => setStage("placed")}>Confirm Order</button>
+          <button className="btn-confirm" disabled={!valid}
+                  style={!valid ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+                  onClick={() => valid && setStage("placed")}>Confirm Order</button>
         </>
       )}
     </div>

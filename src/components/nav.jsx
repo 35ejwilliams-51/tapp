@@ -4,7 +4,7 @@ import { LayoutDashboard, LineChart, ArrowLeftRight, Radar, User, Settings } fro
 export const TAB_ICONS = { home: LayoutDashboard, analyze: LineChart, trade: ArrowLeftRight, scanner: Radar, profile: User };
 export const TAB_LABELS = { home: "Dashboard", analyze: "Analyze", trade: "Trade", scanner: "Scanner", profile: "Profile" };
 export const TABS = ["home", "analyze", "trade", "scanner", "profile"];
-export const cap = (s) => s[0].toUpperCase() + s.slice(1);
+export const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const labelFor = (id) => TAB_LABELS[id] || cap(id);
 
 export function TabItem({ id, active, onClick }) {

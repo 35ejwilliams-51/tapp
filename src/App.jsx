@@ -148,6 +148,19 @@ function ClerkGate() {
   return <AppInner user={u} onSignOut={() => signOut()} />;
 }
 
+const IS_PROD = (() => { try { return !!import.meta.env?.PROD; } catch { return false; } })();
+
+function ConfigError() {
+  return (
+    <CenterScreen>
+      <div className="placeholder">
+        <div>Sign-in isn't configured.</div>
+        <div style={{ fontSize: 12 }}>Set VITE_CLERK_PUBLISHABLE_KEY to enable secure login.</div>
+      </div>
+    </CenterScreen>
+  );
+}
+
 export default function App() {
   const gate = CLERK_KEY
     ? (
@@ -155,6 +168,6 @@ export default function App() {
         <ClerkGate />
       </ClerkProvider>
     )
-    : <MockGate />;
+    : (IS_PROD ? <ConfigError /> : <MockGate />);
   return <LiveProvider>{gate}</LiveProvider>;
 }

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { ChevronRight, CreditCard, Link2, Shield, LifeBuoy } from "lucide-react";
 import { Toggle, Sparkline } from "./primitives.jsx";
 import { ScannerHeroCard } from "./cards.jsx";
-import { ChartPanel, AlertsPanel } from "./panels.jsx";
 import { HERO, ALERTS, TONE, PORTFOLIO_TOTAL, POSITIONS } from "../data.js";
 import { useLive } from "../live.jsx";
 import { useUI } from "./ticker.jsx";
@@ -26,8 +25,8 @@ export function HomeScreen({ user }) {
       <div className="glass-card home-summary">
         <span className="set-sub">Portfolio value</span>
         <span className="home-total">${PT.value.toLocaleString()}</span>
-        <span className="pf-sub" style={{ color: "var(--color-cyan-ink)" }}>
-          <span aria-hidden="true">▲</span> +${PT.change.toLocaleString()} ({PT.pct.toFixed(2)}%) today
+        <span className="pf-sub" style={{ color: PT.change >= 0 ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
+          <span aria-hidden="true">{PT.change >= 0 ? "▲" : "▼"}</span> {PT.change >= 0 ? "+" : "−"}${Math.abs(PT.change).toLocaleString()} ({PT.pct >= 0 ? "+" : ""}{PT.pct.toFixed(2)}%) today
         </span>
       </div>
 
@@ -167,10 +166,3 @@ export function ProfileScreen({ user, onSignOut, light, setLight }) {
   );
 }
 
-/* ---------------- Mobile Chart / Alerts (reuse panels full-width) ---------------- */
-export function ChartScreen() {
-  return <div style={{ minHeight: "calc(100vh - 220px)", display: "flex" }}><ChartPanel /></div>;
-}
-export function AlertsScreen() {
-  return <div className="screen"><AlertsPanel /></div>;
-}
