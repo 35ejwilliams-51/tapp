@@ -1,6 +1,10 @@
+.env
+.env.*
+!.env.example
 node_modules/
 dist/
-.env
-.env.local
-*.log
+coverage/
 .DS_Store
+*.log
+apps/web/.env
+apps/web/.env.local

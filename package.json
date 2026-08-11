@@ -1,21 +1,22 @@
 {
-  "name": "tapp",
+  "name": "tapp-founder-prototype",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "version": "0.0.3-m0-unified",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev:api": "node --experimental-strip-types apps/api/src/server.ts",
+    "dev:web": "npm run dev --workspace @tapp/web",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "build": "npm run build --workspace @tapp/web && node scripts/build.mjs",
+    "provider:check": "node scripts/provider-check.mjs",
+    "start": "node --experimental-strip-types apps/api/src/server.ts"
   },
-  "dependencies": {
-    "@clerk/react": "^6.7.3",
-    "lucide-react": "^0.383.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+  "engines": {
+    "node": ">=22"
   },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.3.1"
-  }
+  "type": "module"
 }
