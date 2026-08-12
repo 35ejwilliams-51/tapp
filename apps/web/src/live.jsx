@@ -105,14 +105,14 @@ export function LiveProvider({ children }) {
           if (q.freshness === "stale") stale = true;
         }
         setMeta({ provider: body.provider || "tapp-gateway", freshness: stale ? "stale" : (quotes.length ? "fresh" : "unknown"), traceId: body.traceId || null });
-        if (!body.configured || quotes.length === 0) setStatus("simulated");
-        else if (stale) setStatus("degraded");
-        else setStatus("live");
+        if (!body.configured) setStatus("simulated");
+else if (quotes.length === 0) setStatus("degraded");
+else if (stale) setStatus("degraded");
+else setStatus("live");
       } catch {
         if (!cancelled) {
           liveSet.current.clear();
           setStatus("error");
-          setTimeout(() => { if (!cancelled) setStatus("simulated"); }, 1800);
         }
       }
     };
@@ -136,6 +136,7 @@ export function LiveProvider({ children }) {
         isLive: liveSet.current.has(ticker),
         dataState: e.dataState,
         providerTimestamp: e.providerTimestamp,
+
       };
     },
     getCandles(ticker) { return candlesRef.current[ticker] || []; },
