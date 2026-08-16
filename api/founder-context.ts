@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 export default function handler(_req: any, res: any) {
   res.status(200).json({
     founderTesting: process.env.FOUNDER_TESTING === 'true',

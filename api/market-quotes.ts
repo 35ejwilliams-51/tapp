@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 const ALLOWED: Record<string, string> = {
   NVDA: 'NVDA',
   TSLA: 'TSLA',

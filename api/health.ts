@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 export default function handler(_req: any, res: any) {
   const traceId = crypto.randomUUID();
   res.setHeader('x-tapp-trace-id', traceId);
