@@ -68,15 +68,23 @@ function AppInner({ user, onSignOut }) {
 
   /* ----- tablet / desktop / ultra-wide ----- */
   if (isTablet) {
-    const isPanelView = tab !== "home" && tab !== "profile";
-    let grid;
+    let scannerGrid;
     if (isUltra) {
-      grid = <div className="dash-grid grid-5"><PortfolioPanel /><ScannerPanel /><WatchlistPanel /><ChartPanel /><AlertsPanel /></div>;
+      scannerGrid = <div className="dash-grid grid-5"><PortfolioPanel /><ScannerPanel /><WatchlistPanel /><ChartPanel /><AlertsPanel /></div>;
     } else if (isDesktop) {
-      grid = <div className="dash-grid grid-4"><PortfolioPanel /><ScannerPanel full /><ChartPanel /><AlertsPanel /></div>;
+      scannerGrid = <div className="dash-grid grid-4"><PortfolioPanel /><ScannerPanel full /><ChartPanel /><AlertsPanel /></div>;
     } else {
-      grid = <div className="dash-grid grid-3"><ScannerPanel full /><ChartPanel /><AlertsPanel /></div>;
+      scannerGrid = <div className="dash-grid grid-3"><ScannerPanel full /><ChartPanel /><AlertsPanel /></div>;
     }
+
+    const desktopScreen = {
+      home: <HomeScreen user={user} />,
+      scanner: <main className={`main-content dashboard ${isDesktop ? "desk" : ""}`}>{scannerGrid}</main>,
+      chart: <main className="main-content"><ChartScreen /></main>,
+      alerts: <main className="main-content"><AlertsScreen /></main>,
+      profile: <main className="main-content"><ProfileScreen user={user} onSignOut={onSignOut} light={light} setLight={setLight} /></main>,
+    }[tab] || <main className="main-content"><Placeholder label={cap(tab)} /></main>;
+
     return (
       <div {...rootProps}>
         <UIProvider>
@@ -85,15 +93,7 @@ function AppInner({ user, onSignOut }) {
           <div className="app-body">
             <header className="header"><div className="header-logo">TAPP</div>{headerActions}</header>
             <LiveBar />
-            {isPanelView ? (
-              <main className={`main-content dashboard ${isDesktop ? "desk" : ""}`}>{grid}</main>
-            ) : (
-              <main className="main-content">
-                {tab === "home"
-                  ? <HomeScreen user={user} />
-                  : <ProfileScreen user={user} onSignOut={onSignOut} light={light} setLight={setLight} />}
-              </main>
-            )}
+            {desktopScreen}
           </div>
         </div>
         </UIProvider>
