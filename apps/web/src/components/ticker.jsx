@@ -3,6 +3,7 @@ import { ChevronLeft, X, Check } from "lucide-react";
 import { CandleChart } from "./primitives.jsx";
 import { useLive } from "../live.jsx";
 import { useDialog } from "../hooks.js";
+import { useMarketHistory } from "../market-history.js";
 
 const NAMES = {
   NVDA: "NVIDIA Corp", TSLA: "Tesla", AAPL: "Apple", AMD: "Advanced Micro Devices",
@@ -80,6 +81,7 @@ function TickerDetail() {
   const live = useLive();
   const [tf, setTf] = useState("1D");
   const ticker = ui?.selected;
+  const history = useMarketHistory(ticker, tf);
   const dialogRef = useDialog(!!ticker && !ui?.ticket);
   if (!ticker) return null;
 
@@ -88,7 +90,8 @@ function TickerDetail() {
   const change = L ? L.change : 0;
   const pct = L ? L.changePercent : 0;
   const up = change >= 0;
-  const candles = candlesFor(live, ticker);
+  const localCandles = candlesFor(live, ticker);
+  const candles = history.supported && history.candles.length >= 2 ? history.candles : localCandles;
   const highs = candles.map((c) => c.h), lows = candles.map((c) => c.l);
   const dayHigh = highs.length ? Math.max(...highs) : price;
   const dayLow = lows.length ? Math.min(...lows) : price;
@@ -119,7 +122,7 @@ function TickerDetail() {
 
         <div className="tf-row" role="group" aria-label="Timeframe">
           {["1H", "1D", "1W", "1M", "1Y"].map((t) => (
-            <button key={t} className={`tf-btn ${tf === t ? "active" : ""}`} onClick={() => setTf(t)} title="Session view (demo)">{t}</button>
+            <button key={t} className={`tf-btn ${tf === t ? "active" : ""}`} aria-pressed={tf === t} onClick={() => setTf(t)}>{t}</button>
           ))}
         </div>
 

@@ -81,10 +81,11 @@ export function LiveProvider({ children }) {
     e.spark.push(p);
     if (e.spark.length > 28) e.spark.shift();
     const arr = (candlesRef.current[tk] ||= []);
-    const now = Date.now();
+    const providerMs = extra.providerTimestamp ? Date.parse(extra.providerTimestamp) : NaN;
+    const candleTime = Number.isFinite(providerMs) ? providerMs : Date.now();
     const last = arr[arr.length - 1];
-    if (!last || now - last.t >= CANDLE_MS) {
-      arr.push({ o: p, h: p, l: p, c: p, t: now });
+    if (!last || candleTime - last.t >= CANDLE_MS) {
+      arr.push({ o: p, h: p, l: p, c: p, t: candleTime });
       if (arr.length > MAX_CANDLES) arr.shift();
     } else {
       last.c = p;
@@ -138,7 +139,7 @@ export function LiveProvider({ children }) {
 
         const quotes = Array.isArray(body.quotes) ? body.quotes : [];
         liveSet.current.clear();
-        providerSet.current.clear();
+        const receivedSet = new Set();
 
         let staleActiveCount = 0;
         let activeCount = 0;
@@ -147,6 +148,8 @@ export function LiveProvider({ children }) {
         for (const q of quotes) {
           if (!q?.symbol || !(q.price > 0) || !dataRef.current[q.symbol]) continue;
 
+          receivedSet.add(q.symbol);
+          if (!providerSet.current.has(q.symbol)) candlesRef.current[q.symbol] = [];
           providerSet.current.add(q.symbol);
           if (q.previousClose > 0) dataRef.current[q.symbol].open = q.previousClose;
 
@@ -173,7 +176,7 @@ export function LiveProvider({ children }) {
           if (freshness === "stale") staleActiveCount += 1;
         }
 
-        const missingCount = Math.max(0, API_SYMBOLS.length - providerSet.current.size);
+        const missingCount = Math.max(0, API_SYMBOLS.length - receivedSet.size);
 
         const overallFreshness = staleActiveCount > 0 || missingCount > 0
           ? "stale"
@@ -199,7 +202,8 @@ export function LiveProvider({ children }) {
           providerSet.current.clear();
           setStatus("simulated");
         } else if (quotes.length === 0) {
-          providerSet.current.clear();
+          // Preserve previously-authoritative symbols. A temporary provider
+          // outage must not turn verified market data into random-walk motion.
           setStatus("degraded");
         } else if (staleActiveCount > 0 || missingCount > 0) {
           // Only active stale data or missing requested quotes degrade the
@@ -211,7 +215,8 @@ export function LiveProvider({ children }) {
       } catch {
         if (!cancelled) {
           liveSet.current.clear();
-          providerSet.current.clear();
+          // Keep providerSet intact so a transient gateway error cannot make
+          // previously-authoritative equities appear to trade synthetically.
           setStatus("error");
         }
       }

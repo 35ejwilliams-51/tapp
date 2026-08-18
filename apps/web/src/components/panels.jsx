@@ -2,9 +2,10 @@ import React from "react";
 import { Radar } from "lucide-react";
 import { Sparkline, CandleChart } from "./primitives.jsx";
 import { ScannerHeroCard, SecondaryCard } from "./cards.jsx";
-import { HERO, WATCH, WATCHLIST, HOLDINGS, CANDLES, ALERTS, TONE } from "../data.js";
+import { HERO, WATCH, WATCHLIST, HOLDINGS, ALERTS, TONE } from "../data.js";
 import { useLive } from "../live.jsx";
 import { useUI } from "./ticker.jsx";
+import { useMarketHistory } from "../market-history.js";
 
 export function PortfolioPanel() {
   return (
@@ -79,16 +80,36 @@ export function ChartPanel() {
   const live = useLive();
   const ui = useUI();
   const ticker = ui?.activeTicker || "NVDA";
+  const [timeframe, setTimeframe] = React.useState("1D");
+  const history = useMarketHistory(ticker, timeframe);
   const L = live?.get(ticker);
   const price = L ? L.price : 172.40;
   const pct = L ? L.changePercent : 5.26;
   const up = pct >= 0;
   const liveCandles = live?.getCandles(ticker) || [];
-  const candles = liveCandles.length >= 2 ? liveCandles : CANDLES;
+  const candles = history.supported
+    ? history.candles
+    : liveCandles;
+  const highs = candles.map((c) => c.h);
+  const lows = candles.map((c) => c.l);
+  const periodHigh = highs.length ? Math.max(...highs) : price;
+  const periodLow = lows.length ? Math.min(...lows) : price;
+  const periodVolume = candles.reduce((sum, c) => sum + (Number(c.v) || 0), 0);
+  const chartReady = candles.length >= 2;
+  const historyMessage = history.status === "loading"
+    ? `Loading ${timeframe} history…`
+    : history.status === "unconfigured"
+      ? "Historical feed unconfigured"
+      : history.status === "error"
+        ? "Historical data temporarily unavailable"
+        : history.status === "empty"
+          ? "No historical bars for this period"
+          : "Building chart…";
+
   return (
     <section className="panel" aria-label="Chart">
       <div className="panel-head">
-        <span className="panel-title">{ticker} · 1D</span>
+        <span className="panel-title">{ticker} · {timeframe}</span>
         <span className="panel-sub" style={{ color: up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
           {up ? "▲ +" : "▼ "}{pct.toFixed(2)}%
         </span>
@@ -96,16 +117,28 @@ export function ChartPanel() {
       <div className="panel-body">
         <div className="chart-stat-row">
           <div className="chart-stat"><span className="k">PRICE</span><span className="v">${price.toFixed(2)}</span></div>
-          <div className="chart-stat"><span className="k">DAY HIGH</span><span className="v">173.88</span></div>
-          <div className="chart-stat"><span className="k">DAY LOW</span><span className="v">164.10</span></div>
-          <div className="chart-stat"><span className="k">VOL</span><span className="v">42.6M</span></div>
+          <div className="chart-stat"><span className="k">HIGH</span><span className="v">{periodHigh.toFixed(ticker.includes("/") ? 4 : 2)}</span></div>
+          <div className="chart-stat"><span className="k">LOW</span><span className="v">{periodLow.toFixed(ticker.includes("/") ? 4 : 2)}</span></div>
+          <div className="chart-stat"><span className="k">VOL</span><span className="v">{periodVolume > 0 ? periodVolume.toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 1 }) : "—"}</span></div>
         </div>
-        <div style={{ flex: 1, minHeight: 180 }}><CandleChart candles={candles} /></div>
-        <div className="tf-row">
-          {["1H", "1D", "1W", "1M", "1Y"].map((t, i) => (
-            <button key={t} className={`tf-btn ${i === 1 ? "active" : ""}`}>{t}</button>
+        <div style={{ flex: 1, minHeight: 180 }}>
+          {chartReady
+            ? <CandleChart candles={candles} />
+            : <div className="placeholder" style={{ minHeight: 180 }}>{history.supported ? historyMessage : "Building live chart…"}</div>}
+        </div>
+        <div className="tf-row" role="group" aria-label="Chart timeframe">
+          {["1H", "1D", "1W", "1M", "1Y"].map((t) => (
+            <button
+              key={t}
+              className={`tf-btn ${timeframe === t ? "active" : ""}`}
+              aria-pressed={timeframe === t}
+              onClick={() => setTimeframe(t)}
+            >{t}</button>
           ))}
         </div>
+        {history.supported && history.provider ? (
+          <div className="panel-sub" style={{ textAlign: "right" }}>Historical: {history.provider}</div>
+        ) : null}
       </div>
     </section>
   );

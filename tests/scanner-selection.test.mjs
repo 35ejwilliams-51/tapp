@@ -13,7 +13,7 @@ test('scanner selection drives the shared chart ticker', () => {
   assert.match(panels, /const ticker = ui\?\.activeTicker \|\| "NVDA"/);
   assert.match(panels, /live\?\.get\(ticker\)/);
   assert.match(panels, /getCandles\(ticker\)/);
-  assert.match(panels, /\{ticker\} · 1D/);
+  assert.match(panels, /\{ticker\} · \{timeframe\}/);
 });
 
 test('review trade still opens ticker detail without changing scanner click semantics', () => {
