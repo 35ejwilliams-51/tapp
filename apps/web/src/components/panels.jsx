@@ -77,16 +77,18 @@ export function WatchlistPanel() {
 
 export function ChartPanel() {
   const live = useLive();
-  const L = live?.get("NVDA");
+  const ui = useUI();
+  const ticker = ui?.activeTicker || "NVDA";
+  const L = live?.get(ticker);
   const price = L ? L.price : 172.40;
   const pct = L ? L.changePercent : 5.26;
   const up = pct >= 0;
-  const liveCandles = live?.getCandles("NVDA") || [];
+  const liveCandles = live?.getCandles(ticker) || [];
   const candles = liveCandles.length >= 2 ? liveCandles : CANDLES;
   return (
     <section className="panel" aria-label="Chart">
       <div className="panel-head">
-        <span className="panel-title">NVDA · 1D</span>
+        <span className="panel-title">{ticker} · 1D</span>
         <span className="panel-sub" style={{ color: up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
           {up ? "▲ +" : "▼ "}{pct.toFixed(2)}%
         </span>

@@ -8,13 +8,14 @@ export function ScannerHeroCard({ ticker, name, price, change, changePercent, co
   const L = useLive()?.get(ticker);
   const ui = useUI();
   const open = () => (ui ? ui.openTicker(ticker) : onReview && onReview());
+  const select = () => ui?.selectTicker(ticker);
   const p = L ? L.price : price;
   const ch = L ? L.change : change;
   const pct = L ? L.changePercent : changePercent;
   const sp = (L && L.spark) || spark;
   const up = ch >= 0;
   return (
-    <div className="card-hero" aria-label={`Top opportunity ${ticker}`}>
+    <div className="card-hero" aria-label={`Top opportunity ${ticker}`} onClick={select}>
       <div className="card-header">
         <div>
           <h2 className="ticker-text">{ticker}</h2>
@@ -34,7 +35,7 @@ export function ScannerHeroCard({ ticker, name, price, change, changePercent, co
 
       <div className="signal-badge"><span className="signal-label">{signal}</span></div>
       <div className="sparkline"><Sparkline data={sp} direction={up ? "up" : "down"} /></div>
-      <button className="btn btn-primary" onClick={open}>Review trade</button>
+      <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); open(); }}>Review trade</button>
     </div>
   );
 }
@@ -53,7 +54,7 @@ export function SecondaryCard({ ticker, name, price, changePercent, gold }) {
       ? [20, 22, 21, 24, 26, 25, 28, 27, 30]
       : [30, 29, 31, 28, 27, 25, 26, 24, 23]);
   return (
-    <button className="card-secondary" onClick={() => ui?.openTicker(ticker)} aria-label={`${ticker}, ${up ? "up" : "down"} ${Math.abs(pct).toFixed(2)}%`}>
+    <button className="card-secondary" onClick={() => ui?.selectTicker(ticker)} aria-label={`${ticker}, ${up ? "up" : "down"} ${Math.abs(pct).toFixed(2)}%`}>
       <div className="row-id"><div className="row-ticker">{ticker}</div><div className="row-name">{name}</div></div>
       <div className="row-spark"><Sparkline data={spark} direction={gold ? "gold" : up ? "up" : "down"} height={30} /></div>
       <div className="row-right">

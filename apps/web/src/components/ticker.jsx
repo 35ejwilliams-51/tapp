@@ -16,7 +16,8 @@ const UICtx = createContext(null);
 export const useUI = () => useContext(UICtx);
 
 export function UIProvider({ children }) {
-  const [selected, setSelected] = useState(null); // ticker | null
+  const [activeTicker, setActiveTicker] = useState("NVDA"); // scanner/chart selection
+  const [selected, setSelected] = useState(null); // detail overlay ticker | null
   const [ticket, setTicket] = useState(null);     // { ticker, side } | null
   const triggerRef = useRef(null);
 
@@ -33,7 +34,8 @@ export function UIProvider({ children }) {
   }, [selected, ticket]);
 
   const api = {
-    selected, ticket,
+    activeTicker, selected, ticket,
+    selectTicker: (t) => setActiveTicker(t),
     openTicker: (t) => { triggerRef.current = document.activeElement; setSelected(t); },
     closeTicker: () => {
       setSelected(null);
