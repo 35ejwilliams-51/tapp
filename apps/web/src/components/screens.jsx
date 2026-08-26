@@ -5,6 +5,7 @@ import { ScannerHeroCard } from "./cards.jsx";
 import { ChartPanel, AlertsPanel } from "./panels.jsx";
 import { HERO, ALERTS, TONE } from "../data.js";
 import { useLive } from "../live.jsx";
+import { useUI } from "./ticker.jsx";
 
 /* ---------------- Home ---------------- */
 export function HomeScreen({ user }) {
@@ -135,9 +136,180 @@ export function ProfileScreen({ user, onSignOut, light, setLight }) {
 }
 
 /* ---------------- Mobile Chart / Alerts (reuse panels full-width) ---------------- */
+
 export function ChartScreen() {
-  return <div style={{ minHeight: "calc(100vh - 220px)", display: "flex" }}><ChartPanel /></div>;
+  const ui = useUI();
+  const live = useLive();
+
+  const symbols = [
+    "NVDA",
+    "TSLA",
+    "AAPL",
+    "AMD",
+    "MSFT",
+    "META",
+    "SPY",
+    "QQQ",
+    "BTC",
+  ];
+
+  const activeTicker = ui?.activeTicker || "NVDA";
+  const quote = live?.get(activeTicker);
+  const price = quote?.price;
+  const changePercent = quote?.changePercent ?? 0;
+  const up = changePercent >= 0;
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100vh - 220px)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
+      <div
+        className="glass-card"
+        style={{
+          padding: 14,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--color-text-secondary)",
+                marginBottom: 4,
+              }}
+            >
+              CHART WORKSPACE
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                }}
+              >
+                {activeTicker}
+              </span>
+
+              {price != null ? (
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                  }}
+                >
+                  {activeTicker === "BTC"
+                    ? `$${Math.round(price).toLocaleString()}`
+                    : activeTicker.includes("/")
+                      ? price.toFixed(4)
+                      : `$${price.toFixed(2)}`}
+                </span>
+              ) : null}
+
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: up
+                    ? "var(--color-cyan-ink)"
+                    : "var(--color-red-ink)",
+                }}
+              >
+                {up ? "▲ +" : "▼ "}
+                {changePercent.toFixed(2)}%
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Select market
+          </div>
+        </div>
+
+        <div
+          role="group"
+          aria-label="Select chart symbol"
+          style={{
+            display: "flex",
+            gap: 6,
+            flexWrap: "wrap",
+          }}
+        >
+          {symbols.map((symbol) => {
+            const selected = activeTicker === symbol;
+
+            return (
+              <button
+                key={symbol}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => ui?.selectTicker(symbol)}
+                style={{
+                  minHeight: 34,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  border: selected
+                    ? "1px solid var(--color-cyan)"
+                    : "1px solid var(--color-border)",
+                  background: selected
+                    ? "rgba(0, 229, 255, 0.12)"
+                    : "var(--color-bg-secondary)",
+                  color: selected
+                    ? "var(--color-cyan-ink)"
+                    : "var(--color-text-primary)",
+                  fontWeight: selected ? 700 : 600,
+                  cursor: "pointer",
+                }}
+              >
+                {symbol}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          minHeight: 0,
+        }}
+      >
+        <ChartPanel />
+      </div>
+    </div>
+  );
 }
+
 export function AlertsScreen() {
   return <div className="screen"><AlertsPanel /></div>;
 }
