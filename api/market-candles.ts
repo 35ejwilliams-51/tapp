@@ -1,20 +1,6 @@
 declare const process: { env: Record<string, string | undefined> };
 
-const ALLOWED: Record<string, string> = {
-  NVDA: 'NVDA',
-  TSLA: 'TSLA',
-  AAPL: 'AAPL',
-  AMD: 'AMD',
-  MSFT: 'MSFT',
-  META: 'META',
-  SPY: 'SPY',
-  QQQ: 'QQQ',
-  GOOGL: 'GOOGL',
-  AMZN: 'AMZN',
-  COIN: 'COIN',
-  PLTR: 'PLTR',
-  GLD: 'GLD',
-};
+const SAFE_STOCK_SYMBOL = /^[A-Z][A-Z0-9.-]{0,9}$/;
 
 type Timeframe = '1H' | '1D' | '1W' | '1M' | '1Y';
 type TimeframeSpec = {
@@ -46,7 +32,7 @@ export default async function handler(req: any, res: any) {
 
   const symbol = String(req.query?.symbol ?? '').trim().toUpperCase();
   const timeframe = String(req.query?.timeframe ?? '1D').trim().toUpperCase() as Timeframe;
-  const providerSymbol = ALLOWED[symbol];
+  const providerSymbol = SAFE_STOCK_SYMBOL.test(symbol) ? symbol : null;
   const spec = TIMEFRAMES[timeframe];
 
   if (!providerSymbol || !spec) {

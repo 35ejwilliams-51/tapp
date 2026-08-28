@@ -1,21 +1,11 @@
 declare const process: { env: Record<string, string | undefined> };
 
-const ALLOWED: Record<string, string> = {
-  NVDA: 'NVDA',
-  TSLA: 'TSLA',
-  AAPL: 'AAPL',
-  AMD: 'AMD',
-  MSFT: 'MSFT',
-  META: 'META',
-  SPY: 'SPY',
-  QQQ: 'QQQ',
-  GOOGL: 'GOOGL',
-  AMZN: 'AMZN',
-  COIN: 'COIN',
-  PLTR: 'PLTR',
-  BTC: 'BINANCE:BTCUSDT',
-  GLD: 'GLD',
-};
+const SAFE_STOCK_SYMBOL = /^[A-Z][A-Z0-9.-]{0,9}$/;
+
+function providerSymbol(symbol: string): string | null {
+  if (symbol === 'BTC') return 'BINANCE:BTCUSDT';
+  return SAFE_STOCK_SYMBOL.test(symbol) ? symbol : null;
+}
 
 type MarketProfile =
   | { kind: 'continuous' }
@@ -47,9 +37,9 @@ const MARKET_PROFILE: Record<string, MarketProfile> = {
 };
 
 function sessionState(symbol: string, nowMs: number): 'active' | 'inactive' {
-  const profile = MARKET_PROFILE[symbol];
+  const profile = MARKET_PROFILE[symbol] ?? (symbol === 'BTC' ? { kind: 'continuous' as const } : { kind: 'sessioned' as const, timeZone: 'America/New_York', openHour: 9, openMinute: 30, closeHour: 16, closeMinute: 0 });
 
-  if (!profile || profile.kind === 'continuous') {
+  if (profile.kind === 'continuous') {
     return 'active';
   }
 
@@ -126,7 +116,8 @@ export default async function handler(req: any, res: any) {
   const symbols = String(raw)
     .split(',')
     .map((v) => v.trim())
-    .filter((v: string) => ALLOWED[v])
+    .map((v) => v.toUpperCase())
+    .filter((v: string) => Boolean(providerSymbol(v)))
     .slice(0, 25);
 
   const key = process.env.FINNHUB_API_KEY?.trim();
@@ -149,7 +140,7 @@ export default async function handler(req: any, res: any) {
       try {
         const r = await fetch(
           `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(
-            ALLOWED[symbol]
+            providerSymbol(symbol)!
           )}&token=${encodeURIComponent(key)}`
         );
 

@@ -3,15 +3,31 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/web",
   "rewrites": [
-    {"source": "/api/founder/context", "destination": "/api/founder-context"},
-    {"source": "/api/market/quotes", "destination": "/api/market-quotes"}
+    {
+      "source": "/api/founder/context",
+      "destination": "/api/founder-context"
+    },
+    {
+      "source": "/api/market/quotes",
+      "destination": "/api/market-quotes"
+    },
+    {
+      "source": "/api/symbol/search",
+      "destination": "/api/symbol-search"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {"key": "X-Content-Type-Options", "value": "nosniff"},
-        {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ]

@@ -1,20 +1,19 @@
 import React, { useState } from "react";
 import { ChevronRight, CreditCard, Link2, Shield, LifeBuoy } from "lucide-react";
-import { Toggle, Sparkline } from "./primitives.jsx";
+import { Toggle } from "./primitives.jsx";
 import { ScannerHeroCard } from "./cards.jsx";
-import { HERO, ALERTS, TONE, PORTFOLIO_TOTAL, POSITIONS } from "../data.js";
+import { ChartPanel, AlertsPanel } from "./panels.jsx";
+import { HERO, ALERTS, TONE } from "../data.js";
 import { useLive } from "../live.jsx";
 import { useUI } from "./ticker.jsx";
 
 /* ---------------- Home ---------------- */
 export function HomeScreen({ user }) {
   const live = useLive();
-  const ui = useUI();
   const h = new Date().getHours();
   const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   const first = (user?.name || "there").split(" ")[0];
   const indices = [{ n: "S&P 500", s: "SPY" }, { n: "Nasdaq", s: "QQQ" }, { n: "Bitcoin", s: "BTC" }];
-  const PT = PORTFOLIO_TOTAL;
   return (
     <div className="screen">
       <div className="greeting">
@@ -24,40 +23,10 @@ export function HomeScreen({ user }) {
 
       <div className="glass-card home-summary">
         <span className="set-sub">Portfolio value</span>
-        <span className="home-total">${PT.value.toLocaleString()}</span>
-        <span className="pf-sub" style={{ color: PT.change >= 0 ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
-          <span aria-hidden="true">{PT.change >= 0 ? "▲" : "▼"}</span> {PT.change >= 0 ? "+" : "−"}${Math.abs(PT.change).toLocaleString()} ({PT.pct >= 0 ? "+" : ""}{PT.pct.toFixed(2)}%) today
+        <span className="home-total">$62,167</span>
+        <span className="pf-sub" style={{ color: "var(--color-cyan-ink)" }}>
+          <span aria-hidden="true">▲</span> +$1,842 (3.05%) today
         </span>
-      </div>
-
-      <div className="section-label">Active positions</div>
-      <div className="pos-list">
-        {POSITIONS.map((p) => {
-          const dir = p.up ? "up" : "down";
-          const spark = p.up ? [18, 20, 19, 22, 24, 23, 26, 28] : [28, 26, 27, 24, 23, 22, 20, 19];
-          return (
-            <button className="pos-card" key={p.t} onClick={() => ui?.openTicker(p.t.split("/")[0])} aria-label={`${p.t} position`}>
-              <div className="pos-l">
-                <div className="pos-t">{p.t}</div>
-                <div className="pos-n">{p.name}</div>
-              </div>
-              <div className="pos-spark"><Sparkline data={spark} direction={dir} height={34} /></div>
-              <div className="pos-mid">
-                <div className="pos-k">Entry</div>
-                <div className="pos-entry">{p.entry.toFixed(2)}</div>
-              </div>
-              <div className="pos-r">
-                <div className="pos-k">P&amp;L</div>
-                <div className="pos-pnl" style={{ color: p.up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
-                  {p.pnl >= 0 ? "+" : "−"}${Math.abs(p.pnl).toLocaleString()}
-                </div>
-                <div className="pos-pct" style={{ color: p.up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
-                  {p.up ? "+" : ""}{p.pct.toFixed(2)}%
-                </div>
-              </div>
-            </button>
-          );
-        })}
       </div>
 
       <div className="idx-row">
@@ -166,3 +135,132 @@ export function ProfileScreen({ user, onSignOut, light, setLight }) {
   );
 }
 
+/* ---------------- Mobile Chart / Alerts (reuse panels full-width) ---------------- */
+
+export function ChartScreen() {
+  const ui = useUI();
+  const live = useLive();
+
+  const symbols = ["NVDA", "TSLA", "AAPL", "AMD", "MSFT", "META", "SPY", "QQQ", "BTC"];
+  const activeTicker = ui?.activeTicker || "NVDA";
+  const quote = live?.get(activeTicker);
+  const price = quote?.price;
+  const changePercent = quote?.changePercent ?? 0;
+  const up = changePercent >= 0;
+
+  const [query, setQuery] = React.useState("");
+  const [results, setResults] = React.useState([]);
+  const [searchState, setSearchState] = React.useState("idle");
+
+  React.useEffect(() => {
+    live?.watchSymbol?.(activeTicker);
+  }, [activeTicker, live]);
+
+  React.useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setSearchState("idle");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const id = setTimeout(() => {
+      setSearchState("loading");
+      fetch(`/api/symbol/search?q=${encodeURIComponent(q)}`, {
+        headers: { accept: "application/json" },
+        signal: controller.signal,
+      })
+        .then(async (r) => {
+          const body = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(body?.state || `symbol search ${r.status}`);
+          setResults(Array.isArray(body.results) ? body.results : []);
+          setSearchState(body.configured === false ? "unconfigured" : "ready");
+        })
+        .catch((err) => {
+          if (err?.name !== "AbortError") setSearchState("error");
+        });
+    }, 250);
+
+    return () => {
+      clearTimeout(id);
+      controller.abort();
+    };
+  }, [query]);
+
+  const selectSymbol = (symbol) => {
+    live?.watchSymbol?.(symbol);
+    ui?.selectTicker(symbol);
+    setQuery("");
+    setResults([]);
+    setSearchState("idle");
+  };
+
+  return (
+    <div style={{ width: "100%", minHeight: "calc(100vh - 220px)", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="glass-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 4 }}>CHART WORKSPACE</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 22, fontWeight: 700 }}>{activeTicker}</span>
+              {price > 0 ? (
+                <span style={{ fontSize: 18, fontWeight: 600 }}>
+                  {activeTicker === "BTC" ? `$${Math.round(price).toLocaleString()}` : `$${price.toFixed(2)}`}
+                </span>
+              ) : <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Loading quote…</span>}
+              {price > 0 ? (
+                <span style={{ fontSize: 13, fontWeight: 600, color: up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
+                  {up ? "▲ +" : "▼ "}{changePercent.toFixed(2)}% <span style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>today</span>
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Search or quick select</div>
+        </div>
+
+        <div style={{ position: "relative", maxWidth: 620 }}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search symbol or company…"
+            aria-label="Search symbol or company"
+            autoComplete="off"
+            style={{ width: "100%", minHeight: 42, boxSizing: "border-box", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--color-border)", background: "var(--color-bg-secondary)", color: "var(--color-text-primary)", outline: "none" }}
+          />
+          {query.trim() ? (
+            <div className="glass-card" style={{ position: "absolute", zIndex: 20, top: 48, left: 0, right: 0, maxHeight: 300, overflowY: "auto", padding: 6 }}>
+              {searchState === "loading" ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>Searching instruments…</div> : null}
+              {searchState === "unconfigured" ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>Symbol search provider is not configured.</div> : null}
+              {searchState === "error" ? <div style={{ padding: 10, color: "var(--color-red-ink)" }}>Symbol search is temporarily unavailable.</div> : null}
+              {searchState === "ready" && !results.length ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>No supported symbols found.</div> : null}
+              {results.map((row) => (
+                <button key={row.symbol} type="button" onClick={() => selectSymbol(row.symbol)} style={{ width: "100%", display: "flex", justifyContent: "space-between", gap: 12, textAlign: "left", padding: "10px 11px", border: 0, borderRadius: 7, background: "transparent", color: "var(--color-text-primary)", cursor: "pointer" }}>
+                  <span><strong>{row.symbol}</strong><span style={{ marginLeft: 10, color: "var(--color-text-secondary)" }}>{row.description}</span></span>
+                  <span style={{ flexShrink: 0, fontSize: 11, color: "var(--color-text-secondary)" }}>{row.type}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div role="group" aria-label="Quick select chart symbol" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {symbols.map((symbol) => {
+            const selected = activeTicker === symbol;
+            return (
+              <button key={symbol} type="button" aria-pressed={selected} onClick={() => selectSymbol(symbol)} style={{ minHeight: 34, padding: "6px 12px", borderRadius: 8, border: selected ? "1px solid var(--color-cyan)" : "1px solid var(--color-border)", background: selected ? "rgba(0, 229, 255, 0.12)" : "var(--color-bg-secondary)", color: selected ? "var(--color-cyan-ink)" : "var(--color-text-primary)", fontWeight: selected ? 700 : 600, cursor: "pointer" }}>
+                {symbol}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: "flex", minHeight: 0 }}><ChartPanel /></div>
+    </div>
+  );
+}
+
+export function AlertsScreen() {
+  return <div className="screen"><AlertsPanel /></div>;
+}
