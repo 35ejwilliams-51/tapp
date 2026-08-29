@@ -141,155 +141,112 @@ export function ChartScreen() {
   const ui = useUI();
   const live = useLive();
 
-  const symbols = [
-    "NVDA",
-    "TSLA",
-    "AAPL",
-    "AMD",
-    "MSFT",
-    "META",
-    "SPY",
-    "QQQ",
-    "BTC",
-  ];
-
+  const symbols = ["NVDA", "TSLA", "AAPL", "AMD", "MSFT", "META", "SPY", "QQQ", "BTC"];
   const activeTicker = ui?.activeTicker || "NVDA";
   const quote = live?.get(activeTicker);
   const price = quote?.price;
   const changePercent = quote?.changePercent ?? 0;
   const up = changePercent >= 0;
 
+  const [query, setQuery] = React.useState("");
+  const [results, setResults] = React.useState([]);
+  const [searchState, setSearchState] = React.useState("idle");
+
+  React.useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setSearchState("idle");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const id = setTimeout(() => {
+      setSearchState("loading");
+      fetch(`/api/symbol/search?q=${encodeURIComponent(q)}`, {
+        headers: { accept: "application/json" },
+        signal: controller.signal,
+      })
+        .then(async (r) => {
+          const body = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(body?.state || `symbol search ${r.status}`);
+          setResults(Array.isArray(body.results) ? body.results : []);
+          setSearchState(body.configured === false ? "unconfigured" : "ready");
+        })
+        .catch((err) => {
+          if (err?.name !== "AbortError") setSearchState("error");
+        });
+    }, 300);
+
+    return () => {
+      clearTimeout(id);
+      controller.abort();
+    };
+  }, [query]);
+
+  const selectSymbol = (rawSymbol) => {
+    const symbol = String(rawSymbol || "").trim().toUpperCase();
+    if (!symbol) return;
+    live?.focusSymbol?.(symbol);
+    ui?.selectTicker(symbol);
+    setQuery("");
+    setResults([]);
+    setSearchState("idle");
+  };
+
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "calc(100vh - 220px)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
-    >
-      <div
-        className="glass-card"
-        style={{
-          padding: 14,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
+    <div style={{ width: "100%", minHeight: "calc(100vh - 220px)", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="glass-card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--color-text-secondary)",
-                marginBottom: 4,
-              }}
-            >
-              CHART WORKSPACE
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 22,
-                  fontWeight: 700,
-                }}
-              >
-                {activeTicker}
-              </span>
-
-              {price != null ? (
-                <span
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                  }}
-                >
-                  {activeTicker === "BTC"
-                    ? `$${Math.round(price).toLocaleString()}`
-                    : activeTicker.includes("/")
-                      ? price.toFixed(4)
-                      : `$${price.toFixed(2)}`}
+            <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 4 }}>CHART WORKSPACE</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 22, fontWeight: 700 }}>{activeTicker}</span>
+              {price > 0 ? (
+                <span style={{ fontSize: 18, fontWeight: 600 }}>
+                  {activeTicker === "BTC" ? `$${Math.round(price).toLocaleString()}` : `$${price.toFixed(2)}`}
+                </span>
+              ) : <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Loading quote…</span>}
+              {price > 0 ? (
+                <span style={{ fontSize: 13, fontWeight: 600, color: up ? "var(--color-cyan-ink)" : "var(--color-red-ink)" }}>
+                  {up ? "▲ +" : "▼ "}{changePercent.toFixed(2)}% <span style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>today</span>
                 </span>
               ) : null}
-
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: up
-                    ? "var(--color-cyan-ink)"
-                    : "var(--color-red-ink)",
-                }}
-              >
-                {up ? "▲ +" : "▼ "}
-                {changePercent.toFixed(2)}%
-              </span>
             </div>
           </div>
-
-          <div
-            style={{
-              fontSize: 12,
-              color: "var(--color-text-secondary)",
-            }}
-          >
-            Select market
-          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Search or quick select</div>
         </div>
 
-        <div
-          role="group"
-          aria-label="Select chart symbol"
-          style={{
-            display: "flex",
-            gap: 6,
-            flexWrap: "wrap",
-          }}
-        >
+        <div style={{ position: "relative", width: "min(680px, 100%)" }}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search symbol or company…"
+            aria-label="Search symbol or company"
+            autoComplete="off"
+            style={{ width: "100%", minHeight: 42, boxSizing: "border-box", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--color-border)", background: "var(--color-bg-secondary)", color: "var(--color-text-primary)", outline: "none" }}
+          />
+          {query.trim() ? (
+            <div className="glass-card" style={{ position: "absolute", zIndex: 20, top: 48, left: 0, right: 0, maxHeight: 300, overflowY: "auto", padding: 6 }}>
+              {searchState === "loading" ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>Searching instruments…</div> : null}
+              {searchState === "unconfigured" ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>Symbol search provider is not configured.</div> : null}
+              {searchState === "error" ? <div style={{ padding: 10, color: "var(--color-red-ink)" }}>Symbol search is temporarily unavailable.</div> : null}
+              {searchState === "ready" && !results.length ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>No supported symbols found.</div> : null}
+              {results.map((row) => (
+                <button key={row.symbol} type="button" onClick={() => selectSymbol(row.symbol)} style={{ width: "100%", display: "flex", justifyContent: "space-between", gap: 12, textAlign: "left", padding: "10px 11px", border: 0, borderRadius: 7, background: "transparent", color: "var(--color-text-primary)", cursor: "pointer" }}>
+                  <span><strong>{row.symbol}</strong><span style={{ marginLeft: 10, color: "var(--color-text-secondary)" }}>{row.description}</span></span>
+                  <span style={{ flexShrink: 0, fontSize: 11, color: "var(--color-text-secondary)" }}>{row.type}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div role="group" aria-label="Quick select chart symbol" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {symbols.map((symbol) => {
             const selected = activeTicker === symbol;
-
             return (
-              <button
-                key={symbol}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => ui?.selectTicker(symbol)}
-                style={{
-                  minHeight: 34,
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  border: selected
-                    ? "1px solid var(--color-cyan)"
-                    : "1px solid var(--color-border)",
-                  background: selected
-                    ? "rgba(0, 229, 255, 0.12)"
-                    : "var(--color-bg-secondary)",
-                  color: selected
-                    ? "var(--color-cyan-ink)"
-                    : "var(--color-text-primary)",
-                  fontWeight: selected ? 700 : 600,
-                  cursor: "pointer",
-                }}
-              >
+              <button key={symbol} type="button" aria-pressed={selected} onClick={() => selectSymbol(symbol)} style={{ minHeight: 34, padding: "6px 12px", borderRadius: 8, border: selected ? "1px solid var(--color-cyan)" : "1px solid var(--color-border)", background: selected ? "rgba(0, 229, 255, 0.12)" : "var(--color-bg-secondary)", color: selected ? "var(--color-cyan-ink)" : "var(--color-text-primary)", fontWeight: selected ? 700 : 600, cursor: "pointer" }}>
                 {symbol}
               </button>
             );
@@ -297,15 +254,7 @@ export function ChartScreen() {
         </div>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          minHeight: 0,
-        }}
-      >
-        <ChartPanel />
-      </div>
+      <div style={{ flex: 1, display: "flex", minHeight: 0 }}><ChartPanel /></div>
     </div>
   );
 }

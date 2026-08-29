@@ -1,9 +1,6 @@
 import React from "react";
 
-const STOCK_HISTORY_SYMBOLS = new Set([
-  "NVDA", "TSLA", "AAPL", "AMD", "MSFT", "META", "SPY", "QQQ",
-  "GOOGL", "AMZN", "COIN", "PLTR", "GLD",
-]);
+const SAFE_STOCK_SYMBOL = /^[A-Z][A-Z0-9.-]{0,9}$/;
 
 const CACHE = new Map();
 const TTL = {
@@ -14,7 +11,7 @@ const TTL = {
   "1Y": 900_000,
 };
 
-export const supportsMarketHistory = (ticker) => STOCK_HISTORY_SYMBOLS.has(ticker);
+export const supportsMarketHistory = (ticker) => SAFE_STOCK_SYMBOL.test(String(ticker || "").toUpperCase()) && ticker !== "BTC";
 
 export function useMarketHistory(ticker, timeframe) {
   const supported = supportsMarketHistory(ticker);

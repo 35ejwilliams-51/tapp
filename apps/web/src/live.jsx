@@ -26,12 +26,13 @@ const SEED = {
   GLD: { price: 215.0, pct: 0.15 },
 };
 
-const API_SYMBOLS = Object.keys(SEED).filter((s) => s !== "EUR/USD");
+const BASE_API_SYMBOLS = Object.keys(SEED).filter((s) => s !== "EUR/USD");
+const SAFE_STOCK_SYMBOL = /^[A-Z][A-Z0-9.-]{0,9}$/;
 const CANDLE_MS = 6000;
 const MAX_CANDLES = 40;
 // Finnhub's prototype/free REST allowance is finite. Four full polls/minute keeps
 // this single-Founder prototype below 60 quote requests/minute for 14 symbols.
-const POLL_MS = 15000;
+const POLL_MS = 20000;
 
 const LiveCtx = createContext(null);
 export const useLive = () => useContext(LiveCtx);
@@ -48,6 +49,7 @@ export function LiveProvider({ children }) {
     missingCount: 0,
   });
   const [, force] = useState(0);
+  const [pollVersion, setPollVersion] = useState(0);
   const dataRef = useRef(null);
   const candlesRef = useRef({});
   const liveSet = useRef(new Set());
@@ -55,6 +57,7 @@ export function LiveProvider({ children }) {
   // session is inactive or their active feed is stale. They must not be
   // overwritten by the random-walk fallback.
   const providerSet = useRef(new Set());
+  const focusedSymbolRef = useRef(null);
 
   if (dataRef.current === null) {
     const init = {};
@@ -68,6 +71,7 @@ export function LiveProvider({ children }) {
         providerTimestamp: null,
         freshness: "unknown",
         sessionState: "unknown",
+        allowSimulation: true,
       };
     }
     dataRef.current = init;
@@ -106,6 +110,7 @@ export function LiveProvider({ children }) {
       for (const tk in dataRef.current) {
         if (providerSet.current.has(tk)) continue;
         const e = dataRef.current[tk];
+        if (e.allowSimulation === false || !(e.price > 0)) continue;
         const vol = e.price > 5000 ? e.price * 0.0009 : e.price < 5 ? e.price * 0.0008 : e.price * 0.0014;
         push(
           tk,
@@ -128,8 +133,12 @@ export function LiveProvider({ children }) {
       }
 
       try {
+        const requestedSymbols = [...BASE_API_SYMBOLS];
+        const focused = focusedSymbolRef.current;
+        if (focused && !requestedSymbols.includes(focused)) requestedSymbols.push(focused);
+
         const r = await fetch(
-          `/api/market/quotes?symbols=${encodeURIComponent(API_SYMBOLS.join(','))}`,
+          `/api/market/quotes?symbols=${encodeURIComponent(requestedSymbols.join(','))}`,
           { headers: { accept: "application/json" } },
         );
         if (!r.ok) throw new Error(`market gateway ${r.status}`);
@@ -176,7 +185,7 @@ export function LiveProvider({ children }) {
           if (freshness === "stale") staleActiveCount += 1;
         }
 
-        const missingCount = Math.max(0, API_SYMBOLS.length - receivedSet.size);
+        const missingCount = Math.max(0, requestedSymbols.length - receivedSet.size);
 
         const overallFreshness = staleActiveCount > 0 || missingCount > 0
           ? "stale"
@@ -225,11 +234,35 @@ export function LiveProvider({ children }) {
     poll();
     const id = setInterval(poll, POLL_MS);
     return () => { cancelled = true; clearInterval(id); };
-  }, []);
+  }, [pollVersion]);
+
+  const focusSymbol = (rawTicker) => {
+    const ticker = String(rawTicker || "").trim().toUpperCase();
+    if (!SAFE_STOCK_SYMBOL.test(ticker)) return false;
+
+    if (!dataRef.current[ticker]) {
+      dataRef.current[ticker] = {
+        price: 0,
+        open: 0,
+        spark: [],
+        dataState: "connecting",
+        providerTimestamp: null,
+        freshness: "unknown",
+        sessionState: "unknown",
+        allowSimulation: false,
+      };
+    }
+
+    focusedSymbolRef.current = ticker;
+    setPollVersion((n) => n + 1);
+    force((n) => n + 1);
+    return true;
+  };
 
   const api = {
     status,
     meta,
+    focusSymbol,
     get(ticker) {
       const e = dataRef.current[ticker];
       if (!e) return null;
