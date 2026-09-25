@@ -227,15 +227,61 @@ export function ChartScreen() {
             style={{ width: "100%", minHeight: 42, boxSizing: "border-box", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--color-border)", background: "var(--color-bg-secondary)", color: "var(--color-text-primary)", outline: "none" }}
           />
           {query.trim() ? (
-            <div className="glass-card" style={{ position: "absolute", zIndex: 20, top: 48, left: 0, right: 0, maxHeight: 300, overflowY: "auto", padding: 6 }}>
-              {searchState === "loading" ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>Searching instruments…</div> : null}
-              {searchState === "unconfigured" ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>Symbol search provider is not configured.</div> : null}
-              {searchState === "error" ? <div style={{ padding: 10, color: "var(--color-red-ink)" }}>Symbol search is temporarily unavailable.</div> : null}
-              {searchState === "ready" && !results.length ? <div style={{ padding: 10, color: "var(--color-text-secondary)" }}>No supported symbols found.</div> : null}
-              {results.map((row) => (
-                <button key={row.symbol} type="button" onClick={() => selectSymbol(row.symbol)} style={{ width: "100%", display: "flex", justifyContent: "space-between", gap: 12, textAlign: "left", padding: "10px 11px", border: 0, borderRadius: 7, background: "transparent", color: "var(--color-text-primary)", cursor: "pointer" }}>
-                  <span><strong>{row.symbol}</strong><span style={{ marginLeft: 10, color: "var(--color-text-secondary)" }}>{row.description}</span></span>
-                  <span style={{ flexShrink: 0, fontSize: 11, color: "var(--color-text-secondary)" }}>{row.type}</span>
+            <div
+              role="listbox"
+              aria-label="Symbol search results"
+              style={{
+                position: "absolute",
+                zIndex: "var(--z-dropdown)",
+                top: "calc(100% + 8px)",
+                left: 0,
+                right: 0,
+                maxHeight: "min(320px, 42vh)",
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+                padding: 6,
+                border: "1px solid var(--hairline)",
+                borderRadius: 12,
+                background: "var(--color-bg-secondary)",
+                boxShadow: "0 18px 40px rgba(0, 0, 0, 0.42), var(--shadow-glass-standard)",
+              }}
+            >
+              {searchState === "loading" ? <div style={{ padding: "11px 12px", color: "var(--color-text-secondary)" }}>Searching instruments…</div> : null}
+              {searchState === "unconfigured" ? <div style={{ padding: "11px 12px", color: "var(--color-text-secondary)" }}>Symbol search provider is not configured.</div> : null}
+              {searchState === "error" ? <div style={{ padding: "11px 12px", color: "var(--color-red-ink)" }}>Symbol search is temporarily unavailable.</div> : null}
+              {searchState === "ready" && !results.length ? <div style={{ padding: "11px 12px", color: "var(--color-text-secondary)" }}>No supported symbols found.</div> : null}
+              {results.map((row, index) => (
+                <button
+                  key={`${row.symbol}-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  onClick={() => selectSymbol(row.symbol)}
+                  style={{
+                    width: "100%",
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) auto",
+                    alignItems: "center",
+                    gap: 14,
+                    textAlign: "left",
+                    padding: "11px 12px",
+                    border: 0,
+                    borderBottom: index < results.length - 1 ? "1px solid var(--hairline-soft)" : 0,
+                    borderRadius: 8,
+                    background: "transparent",
+                    color: "var(--color-text-primary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: 10 }}>
+                    <strong style={{ flexShrink: 0 }}>{row.symbol}</strong>
+                    <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--color-text-secondary)" }}>
+                      {row.description || "—"}
+                    </span>
+                  </span>
+                  <span style={{ flexShrink: 0, fontSize: 11, color: "var(--color-text-tertiary)" }}>
+                    {row.type || "Instrument"}
+                  </span>
                 </button>
               ))}
             </div>
