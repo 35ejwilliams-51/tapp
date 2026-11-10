@@ -16,7 +16,7 @@ test('Massive historical candle gateway exists and keeps its key server-side', (
 
 test('chart timeframe buttons drive real state and historical requests', () => {
   assert.match(panels, /useState\("1D"\)/);
-  assert.match(panels, /onClick=\{\(\) => setTimeframe\(t\)\}/);
+  assert.match(panels, /onClick=\{\(\)\s*=>\s*setTimeframe\(t\)\s*\}/);
   assert.match(panels, /\{ticker\} · \{timeframe\}/);
   assert.match(ticker, /useMarketHistory\(ticker, tf\)/);
 });

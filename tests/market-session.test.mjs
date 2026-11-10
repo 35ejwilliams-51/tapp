@@ -21,5 +21,5 @@ test('frontend treats session-inactive data as authoritative rather than simulat
 });
 
 test('prototype polling cadence respects Finnhub free REST request budget for current symbol count', () => {
-  assert.match(live, /const POLL_MS = 15000/);
+  assert.match(live, /const POLL_MS = 20000/);
 });
